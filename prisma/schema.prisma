@@ -1,20 +1,19 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
   relationMode = "prisma"
 }
 
 model Product {
-  id        Int     @id @default(autoincrement())
+  id        Int               @id @default(autoincrement())
   name      String
-  price     Float    @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  price     Float             @default(0)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
   items     ConsignmentItem[]
 }
 
@@ -31,7 +30,7 @@ model Pharmacy {
 model Consignment {
   id            Int               @id @default(autoincrement())
   pharmacyId    Int
-  date          String // date YYYY-MM-DD or ISO string
+  date          String
   paid          Int               @default(0)
   paidAmount    Float             @default(0)
   lastVisitDate String?
@@ -39,19 +38,17 @@ model Consignment {
   paymentNotes  String?
   visitNotes    String?
   createdAt     DateTime          @default(now())
-
-  pharmacy Pharmacy  @relation(fields: [pharmacyId], references: [id])
-  items    ConsignmentItem[]
+  pharmacy      Pharmacy          @relation(fields: [pharmacyId], references: [id])
+  items         ConsignmentItem[]
 }
 
 model ConsignmentItem {
-  id             Int         @id @default(autoincrement())
-  consignmentId  Int
-  productId      Int
-  qty            Int
-  price          Float
-  remainingQty   Int         @default(0)
-
-  consignment    Consignment @relation(fields: [consignmentId], references: [id])
-  product        Product     @relation(fields: [productId], references: [id])
+  id            Int         @id @default(autoincrement())
+  consignmentId Int
+  productId     Int
+  qty           Int
+  price         Float
+  remainingQty  Int         @default(0)
+  consignment   Consignment @relation(fields: [consignmentId], references: [id], onDelete: Cascade)
+  product       Product     @relation(fields: [productId], references: [id])
 }

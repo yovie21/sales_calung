@@ -1,29 +1,62 @@
-import { NextResponse } from "next/server";
-import { PrismaClient } from "../../../../src/generated/client";
+import { prisma } from "@/lib/prisma";
+import { fail, json, options } from "@/lib/cors";
 
-const prisma = new PrismaClient();
-
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const id = Number(searchParams.get("id"));
-  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-  const product = await prisma.product.findUnique({ where: { id } });
-  return NextResponse.json(product);
+export function OPTIONS(request: Request) {
+  return options(request.headers.get("origin"));
 }
 
-export async function PUT(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const id = Number(searchParams.get("id"));
-  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-  const data = await request.json();
-  const updated = await prisma.product.update({ where: { id }, data });
-  return NextResponse.json(updated);
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const origin = request.headers.get("origin");
+  try {
+    const { id: raw } = await params;
+    const id = Number(raw);
+    if (!id) return json({ error: "Missing id" }, { status: 400, origin });
+    const product = await prisma.product.findUnique({ where: { id } });
+    if (!product) return json({ error: "Not found" }, { status: 404, origin });
+    return json(product, { origin });
+  } catch (e) {
+    return fail(e, origin);
+  }
 }
 
-export async function DELETE(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const id = Number(searchParams.get("id"));
-  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-  const deleted = await prisma.product.delete({ where: { id } });
-  return NextResponse.json(deleted);
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const origin = request.headers.get("origin");
+  try {
+    const { id: raw } = await params;
+    const id = Number(raw);
+    if (!id) return json({ error: "Missing id" }, { status: 400, origin });
+    const body = await request.json();
+    const updated = await prisma.product.update({
+      where: { id },
+      data: {
+        ...(body.name != null ? { name: String(body.name).trim() } : {}),
+        ...(body.price != null ? { price: Number(body.price) } : {}),
+      },
+    });
+    return json(updated, { origin });
+  } catch (e) {
+    return fail(e, origin);
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const origin = request.headers.get("origin");
+  try {
+    const { id: raw } = await params;
+    const id = Number(raw);
+    if (!id) return json({ error: "Missing id" }, { status: 400, origin });
+    await prisma.product.delete({ where: { id } });
+    return json({ ok: true }, { origin });
+  } catch (e) {
+    return fail(e, origin);
+  }
 }
