@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { fail, json, options } from "@/lib/cors";
+import { deleteProductCascade } from "@/lib/cascade-delete";
 
 export function OPTIONS(request: Request) {
   return options(request.headers.get("origin"));
@@ -54,7 +55,7 @@ export async function DELETE(
     const { id: raw } = await params;
     const id = Number(raw);
     if (!id) return json({ error: "Missing id" }, { status: 400, origin });
-    await prisma.product.delete({ where: { id } });
+    await deleteProductCascade(id);
     return json({ ok: true }, { origin });
   } catch (e) {
     return fail(e, origin);

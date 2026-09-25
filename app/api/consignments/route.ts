@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { fail, json, options } from "@/lib/cors";
+import { deleteConsignmentCascade } from "@/lib/cascade-delete";
 
 const include = {
   pharmacy: true,
@@ -106,6 +107,19 @@ export async function PUT(request: Request) {
       include,
     });
     return json(updated, { origin });
+  } catch (e) {
+    return fail(e, origin);
+  }
+}
+
+export async function DELETE(request: Request) {
+  const origin = request.headers.get("origin");
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = Number(searchParams.get("id"));
+    if (!id) return json({ error: "Missing id" }, { status: 400, origin });
+    await deleteConsignmentCascade(id);
+    return json({ ok: true }, { origin });
   } catch (e) {
     return fail(e, origin);
   }
